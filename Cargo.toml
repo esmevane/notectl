@@ -1,0 +1,6 @@
+[package]
+name = "notectl"
+version = "0.1.0"
+authors = ["Joseph McCormick <esmevane@gmail.com>"]
+
+[dependencies]
