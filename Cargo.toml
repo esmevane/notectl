@@ -1,9 +1,10 @@
 [package]
 name = "notectl"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Joseph McCormick <esmevane@gmail.com>"]
 
 [dependencies]
+clap = "2.30.0"
 daemonize = "0.2.3"
 rocket = "0.3.6"
 rocket_codegen = "0.3.6"
