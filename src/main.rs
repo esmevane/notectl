@@ -17,6 +17,8 @@ use clap::{App, SubCommand};
 use daemonize::Daemonize;
 use rocket_contrib::Json;
 
+mod service;
+
 #[derive(Serialize, Deserialize)]
 enum HealthStatus {
     Healthy,
@@ -105,6 +107,7 @@ fn pid() -> Option<usize> {
             Ok(parsed) => Some(parsed),
             Err(_) => None,
         },
+
         Err(_) => None,
     }
 }
@@ -125,15 +128,21 @@ fn main() {
         .author("Joseph McCormick <esmevane@gmail.com>")
         .subcommand(SubCommand::with_name("start").about("Starts the service"))
         .subcommand(SubCommand::with_name("stop").about("Stops the service"))
-        .subcommand(SubCommand::with_name("pid").about("Returns the process id"))
+        .subcommand(
+            SubCommand::with_name("pid").about("Returns the process id"),
+        )
         .get_matches();
 
-    match matches.subcommand() {
+    println!("{:?}", matches);
+
+    let _outcome = match matches.subcommand() {
         ("start", Some(_)) => start(),
         ("stop", Some(_)) => stop(),
         ("pid", Some(_)) => print_pid(),
         _ => Ok(()),
     };
+
+    println!("{:?}", std::env::current_dir());
 
     ()
 }
