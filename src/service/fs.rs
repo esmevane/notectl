@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::PathBuf;
 
 pub fn read_file(mut file: File) -> Result<String, String> {
     let mut contents = String::new();
@@ -16,9 +15,9 @@ pub fn parse_pidfile_contents(contents: String) -> Result<usize, String> {
 #[cfg(test)]
 
 mod test {
-    use std::fs::File;
     use std::io::prelude::*;
-    use std::fs::remove_file;
+    use std::fs::{remove_file, File};
+    use std::path::PathBuf;
     use super::*;
 
     #[test]

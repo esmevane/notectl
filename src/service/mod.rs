@@ -1,5 +1,9 @@
+use daemonize::Daemonize;
+use rocket;
+
 use std::fs::{remove_file, File};
 use std::path::PathBuf;
+use std::process::Command;
 
 mod fs;
 
@@ -10,7 +14,10 @@ pub struct Service {
 }
 
 impl Service {
-    fn new(given_name: Option<String>, given_dir: Option<PathBuf>) -> Service {
+    pub fn new(
+        given_name: Option<String>,
+        given_dir: Option<PathBuf>,
+    ) -> Service {
         let dir = given_dir.unwrap_or(PathBuf::from("/tmp"));
         let name = given_name.unwrap_or("notectl".to_string());
         let mut pidfile = dir.clone();
@@ -28,8 +35,47 @@ impl Service {
         Service::new(Some(name.to_string()), None)
     }
 
-    fn empty() -> Service {
+    pub fn empty() -> Service {
         Service::new(None, None)
+    }
+
+    pub fn id(&self) -> Option<usize> {
+        if self.pidfile.exists() {
+            File::open(&self.pidfile)
+                .map_err(|error| error.to_string())
+                .and_then(fs::read_file)
+                .and_then(fs::parse_pidfile_contents)
+                .ok()
+        } else {
+            None
+        }
+    }
+
+    pub fn start(&self, routes: Vec<rocket::Route>) {
+        if self.is_running() {
+            println!("Notectl process already running.");
+        } else {
+            Daemonize::new()
+                .working_directory("/tmp")
+                .pid_file("/tmp/notectl.pid")
+                .start()
+                .unwrap();
+
+            rocket::ignite().mount("/", routes).launch();
+        }
+    }
+
+    pub fn stop(&self) {
+        if self.is_running() {
+            Command::new("kill")
+                .arg(self.id().expect("Unable to retrieve PID").to_string())
+                .output()
+                .expect("Couldn't kill notectl program");
+
+            self.remove_pidfile();
+        } else {
+            println!("Unable to find running notectl process.");
+        }
     }
 
     fn is_running(&self) -> bool {
@@ -39,18 +85,6 @@ impl Service {
     fn remove_pidfile(&self) {
         if self.is_running() {
             remove_file(&self.pidfile).expect("Unable to remove pidfile");
-        }
-    }
-
-    fn id(&self) -> Option<usize> {
-        if self.pidfile.exists() {
-            File::open(&self.pidfile)
-                .map_err(|error| error.to_string())
-                .and_then(fs::read_file)
-                .and_then(fs::parse_pidfile_contents)
-                .ok()
-        } else {
-            None
         }
     }
 }
