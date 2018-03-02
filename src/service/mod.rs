@@ -1,5 +1,4 @@
 use daemonize::Daemonize;
-use rocket;
 
 use std::fs::{remove_file, File};
 use std::path::PathBuf;
@@ -8,8 +7,6 @@ use std::process::Command;
 mod fs;
 
 pub struct Service {
-    dir: PathBuf,
-    name: String,
     pidfile: PathBuf,
 }
 
@@ -24,15 +21,7 @@ impl Service {
 
         pidfile.push(format!("{}.pid", &name));
 
-        Service {
-            dir: dir,
-            name: name,
-            pidfile: pidfile,
-        }
-    }
-
-    fn named(name: &'static str) -> Service {
-        Service::new(Some(name.to_string()), None)
+        Service { pidfile: pidfile }
     }
 
     pub fn empty() -> Service {
@@ -51,7 +40,10 @@ impl Service {
         }
     }
 
-    pub fn start(&self, routes: Vec<rocket::Route>) {
+    pub fn start<F>(&self, on_start: F)
+    where
+        F: Fn() -> (),
+    {
         if self.is_running() {
             println!("Notectl process already running.");
         } else {
@@ -61,7 +53,7 @@ impl Service {
                 .start()
                 .unwrap();
 
-            rocket::ignite().mount("/", routes).launch();
+            on_start()
         }
     }
 
@@ -96,34 +88,8 @@ mod test {
     use std::io::prelude::*;
     use super::*;
 
-    #[test]
-    fn name_base_case() {
-        let service = Service::empty();
-
-        assert_eq!(service.name, "notectl".to_string());
-    }
-
-    #[test]
-    fn arbitrary_name() {
-        let name = "note-control".to_string();
-        let service = Service::new(Some(name.clone()), None);
-
-        assert_eq!(service.name, name);
-    }
-
-    #[test]
-    fn dir_base_case() {
-        let service = Service::empty();
-
-        assert_eq!(service.dir, PathBuf::from("/tmp"));
-    }
-
-    #[test]
-    fn arbitrary_dir() {
-        let dir = PathBuf::from("/home");
-        let service = Service::new(None, Some(dir.clone()));
-
-        assert_eq!(service.dir, dir);
+    fn service_named(name: &'static str) -> Service {
+        Service::new(Some(name.to_string()), None)
     }
 
     #[test]
@@ -142,7 +108,7 @@ mod test {
 
     #[test]
     fn id_when_present() {
-        let service = Service::named("notectl.id-when-present");
+        let service = service_named("notectl.id-when-present");
         let mut file = File::create(&service.pidfile).unwrap();
         let expectation: usize = 12345;
         let _write_outcome = write!(file, "{}", expectation);
@@ -154,7 +120,7 @@ mod test {
 
     #[test]
     fn cleans_up_after_itself() {
-        let service = Service::named("notectl.cleans-up-after-itself");
+        let service = service_named("notectl.cleans-up-after-itself");
         let mut file = File::create(&service.pidfile).unwrap();
         let expectation: usize = 12345;
         let _write_outcome = write!(file, "{}", expectation);
@@ -175,7 +141,7 @@ mod test {
 
     #[test]
     fn is_running_when_file_exists() {
-        let service = Service::named("notectl.is-running-when-file-exists");
+        let service = service_named("notectl.is-running-when-file-exists");
         let mut file = File::create(&service.pidfile).unwrap();
         let expectation: usize = 12345;
         let _write_outcome = write!(file, "{}", expectation);

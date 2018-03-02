@@ -1,52 +1,23 @@
-#![feature(plugin)]
-#![plugin(rocket_codegen)]
-
+extern crate actix_web;
 extern crate clap;
 extern crate daemonize;
-extern crate rocket;
-extern crate rocket_contrib;
+extern crate serde;
+extern crate serde_json;
 
 #[macro_use]
 extern crate serde_derive;
 
 use clap::{App, SubCommand};
-use rocket_contrib::Json;
-
-mod service;
-
+use api::Api;
 use service::Service;
 
-#[derive(Serialize, Deserialize)]
-enum HealthStatus {
-    Healthy,
-    Unhealthy,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Health {
-    status: HealthStatus,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Index {}
-
-#[get("/")]
-fn index() -> Option<Json<Index>> {
-    Some(Json(Index {}))
-}
-
-#[get("/health")]
-fn health() -> Option<Json<Health>> {
-    Some(Json(Health {
-        status: HealthStatus::Healthy,
-    }))
-}
+mod api;
+mod service;
 
 fn start() {
-    let routes = routes![index, health];
     let service = Service::empty();
 
-    service.start(routes);
+    service.start(|| Api::new().run());
 }
 
 fn stop() {
