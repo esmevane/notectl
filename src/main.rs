@@ -9,47 +9,45 @@ extern crate serde_derive;
 
 use clap::{App, SubCommand};
 use api::Api;
+use operation::Operation;
 use service::Service;
 
 mod api;
+mod operation;
 mod service;
 
-fn start() {
-    let service = Service::empty();
-
-    service.start(|| Api::new().run());
-}
-
-fn stop() {
-    let service = Service::empty();
-
-    service.stop();
-}
-
-fn print_pid() {
-    let service = Service::empty();
-    match service.id() {
-        Some(pid) => println!("{}", pid),
-        None => println!("Unable to locate running notectl process"),
-    }
-}
-
 fn main() {
+    let stop = Operation::new("stop", "Stops the service", || {
+        let service = Service::empty();
+        service.stop();
+    });
+
+    let start = Operation::new("start", "Starts the service", || {
+        let service = Service::empty();
+        service.start(|| Api::new().run());
+    });
+
+    let pid = Operation::new("pid", "Displays the service pid", || {
+        let service = Service::empty();
+        match service.id() {
+            Some(pid) => println!("{}", pid),
+            None => println!("Unable to locate running notectl process"),
+        }
+    });
+
     let matches = App::new("notectl")
         .version("0.0.1")
         .about("A note handling core service")
         .author("Joseph McCormick <esmevane@gmail.com>")
-        .subcommand(SubCommand::with_name("start").about("Starts the service"))
-        .subcommand(SubCommand::with_name("stop").about("Stops the service"))
-        .subcommand(
-            SubCommand::with_name("pid").about("Returns the process id"),
-        )
+        .subcommand(SubCommand::with_name(start.name).about(start.about))
+        .subcommand(SubCommand::with_name(stop.name).about(stop.about))
+        .subcommand(SubCommand::with_name(pid.name).about(pid.about))
         .get_matches();
 
-    match matches.subcommand() {
-        ("start", Some(_)) => start(),
-        ("stop", Some(_)) => stop(),
-        ("pid", Some(_)) => print_pid(),
+    match matches.subcommand_name() {
+        Some(command) if command == start.name => start.perform(),
+        Some(command) if command == stop.name => stop.perform(),
+        Some(command) if command == pid.name => pid.perform(),
         _ => (),
     };
 }

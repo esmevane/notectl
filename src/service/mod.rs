@@ -60,6 +60,7 @@ impl Service {
     pub fn stop(&self) {
         if self.is_running() {
             Command::new("kill")
+                .arg("-9")
                 .arg(self.id().expect("Unable to retrieve PID").to_string())
                 .output()
                 .expect("Couldn't kill notectl program");
@@ -89,7 +90,7 @@ mod test {
     use super::*;
 
     fn service_named(name: &'static str) -> Service {
-        Service::new(Some(name.to_string()), None)
+        Service::new(Some(String::from(name)), None)
     }
 
     #[test]
