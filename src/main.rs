@@ -17,23 +17,20 @@ mod operation;
 mod service;
 
 fn main() {
-    let stop = Operation::new("stop", "Stops the service", || {
-        let service = Service::empty();
-        service.stop();
-    });
+    let service = Service::empty();
 
+    let stop = Operation::new("stop", "Stops the service", || service.stop());
     let start = Operation::new("start", "Starts the service", || {
-        let service = Service::empty();
-        service.start(|| Api::new().run());
+        service.start(|| Api::new().run())
     });
 
-    let pid = Operation::new("pid", "Displays the service pid", || {
-        let service = Service::empty();
-        match service.id() {
-            Some(pid) => println!("{}", pid),
-            None => println!("Unable to locate running notectl process"),
-        }
-    });
+    let pid =
+        Operation::new("pid", "Displays the service pid", || {
+            match service.id() {
+                Some(pid) => println!("{}", pid),
+                None => println!("Unable to locate running notectl process"),
+            }
+        });
 
     let matches = App::new("notectl")
         .version("0.0.1")

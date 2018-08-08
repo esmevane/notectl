@@ -40,9 +40,9 @@ impl Service {
         }
     }
 
-    pub fn start<F>(&self, on_start: F)
+    pub fn start<T>(&self, on_start: T)
     where
-        F: Fn() -> (),
+        T: Fn() -> (),
     {
         if self.is_running() {
             println!("Notectl process already running.");
@@ -85,9 +85,9 @@ impl Service {
 #[cfg(test)]
 
 mod test {
+    use super::*;
     use std::fs::File;
     use std::io::prelude::*;
-    use super::*;
 
     fn service_named(name: &'static str) -> Service {
         Service::new(Some(String::from(name)), None)
