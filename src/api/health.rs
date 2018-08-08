@@ -1,5 +1,5 @@
+use actix_web::{Error, HttpRequest, HttpResponse};
 use api::content_types;
-use actix_web::{Error, HttpRequest, HttpResponse, Responder, Result};
 use serde_json;
 
 #[derive(Serialize)]
@@ -20,19 +20,11 @@ impl Health {
     }
 }
 
-impl Responder for Health {
-    type Item = HttpResponse;
-    type Error = Error;
+pub fn handler(_request: &HttpRequest) -> Result<HttpResponse, Error> {
+    let health = Health::new();
+    let body = serde_json::to_string(&health)?;
 
-    fn respond_to(self, _request: HttpRequest) -> Result<HttpResponse> {
-        let body = serde_json::to_string(&self)?;
-
-        Ok(HttpResponse::Ok()
-            .content_type(content_types::JSON)
-            .body(body)?)
-    }
-}
-
-pub fn handler(_request: HttpRequest) -> Health {
-    Health::new()
+    Ok(HttpResponse::Ok()
+        .content_type(content_types::JSON)
+        .body(body))
 }

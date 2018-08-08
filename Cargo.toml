@@ -4,8 +4,8 @@ version = "0.0.1"
 authors = ["Joseph McCormick <esmevane@gmail.com>"]
 
 [dependencies]
-actix = "0.5"
-actix-web = "0.4"
+actix = "0.7"
+actix-web = "0.7"
 clap = "2.30.0"
 daemonize = "0.2.3"
 serde = "1.0.27"
