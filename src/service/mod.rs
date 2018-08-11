@@ -6,6 +6,8 @@ use std::process::Command;
 
 mod fs;
 
+pub mod configuration;
+
 pub struct Service {
     pidfile: PathBuf,
 }
